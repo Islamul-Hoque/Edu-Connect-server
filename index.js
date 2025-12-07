@@ -73,7 +73,12 @@ async function run() {
             res.send(result);
         });
         
-        
+
+        // latest-tutors get api for homepage
+        app.get('/latest-tutors', async (req, res) => {
+            const result = await userCollection.find({ role: 'Tutor' }).sort({ createdAt: -1 }).limit(4).toArray();
+            res.send(result);
+        }); 
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
