@@ -72,7 +72,47 @@ async function run() {
             const result = await tuitionCollection.find({}).sort({ createdAt: -1 }).limit(4).toArray();
             res.send(result);
         });
-        
+
+        // All tuition get api
+        // app.get('/all-tuitions', async (req, res) => {
+        //     const result = await tuitionCollection.find({}).toArray();
+        //     res.send(result);
+        // });
+
+        app.get('/all-tuitions', async (req, res) => {
+  const search = req.query.search || "";
+  const query = {
+    $or: [
+      { subject: { $regex: search, $options: "i" } },
+      { location: { $regex: search, $options: "i" } }
+    ]
+  };
+  const result = await tuitionCollection.find(query).toArray();
+  res.send(result);
+});
+
+// app.get("/all-tuitions", async (req, res) => {
+//   try {
+//     const { limit = 0, skip = 0, sort = "class", order = "desc", search = "",  } = req.query;
+//     const sortOption = {};
+//     let query = {};
+
+//     if (search) { query.subject = { $regex: search, $options: "i" };}
+//     sortOption[sort || "class"] = order === "asc" ? 1 : -1;
+//     const apps = await tuitionCollection.find(query).sort(sortOption).limit(Number(limit)).skip(Number(skip)).project({ description: 0, ratings: 0 }).toArray();
+//     const count = await tuitionCollection.countDocuments(query);
+
+//     res.send({ apps, total: count });
+//     } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//    }
+// });
+
+
+
+
+
 
         // latest-tutors get api for homepage
         app.get('/latest-tutors', async (req, res) => {
