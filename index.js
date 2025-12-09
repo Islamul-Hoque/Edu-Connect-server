@@ -143,6 +143,12 @@ async function run() {
             res.send(result);
         });
 
+        // get all tuition post by student email
+        app.get('/my-tuitions', async (req, res) => {
+            const email = req.query.email;
+            const result = await tuitionCollection.find({ studentEmail: email }).sort({createdAt: -1}).toArray();
+            res.send(result);
+        });
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
