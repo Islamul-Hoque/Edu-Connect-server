@@ -48,6 +48,7 @@ async function run() {
         const db = client.db('eTuitionBdDB');
         const userCollection = db.collection('users');
         const tuitionCollection = db.collection('tuitions');
+        const applyTuitionCollection = db.collection('appliedTuitions');
 
         // User APIs
         app.post('/users', async (req, res) => {
@@ -73,27 +74,52 @@ async function run() {
             res.send(result);
         });
 
+        // Get single tuition post
+        app.get('/tuition/:id', async (req, res) => {
+            const id = req.params.id;
+            const result = await tuitionCollection.findOne({ _id: new ObjectId(id) });
+            res.send(result);
+        });
+
+        // Apply for a tuition post
+app.post('/apply-tuition', async (req, res) => {
+  const application = req.body;
+  application.appliedAt = new Date();
+  application.status = "Pending";
+
+  // Duplicate application check
+  const existing = await applyTuitionCollection.findOne({
+    tuitionId: application.tuitionId,
+    tutorEmail: application.tutorEmail
+  });
+
+  if (existing) {
+    return res.send({ success: false, message: "You have already applied for this tuition." });
+  }
+
+  const result = await applyTuitionCollection.insertOne(application);
+  res.send({ success: true, message: "Application submitted successfully!", insertedId: result.insertedId });
+});
+
+
         // All tuition get api
         // app.get('/all-tuitions', async (req, res) => {
         //     const result = await tuitionCollection.find({}).toArray();
         //     res.send(result);
         // });
 
+// Jamela ache
         app.get('/all-tuitions', async (req, res) => {
-  const search = req.query.search || "";
-  const query = {
-    $or: [
-      { subject: { $regex: search, $options: "i" } },
-      { location: { $regex: search, $options: "i" } }
-    ]
-  };
-  const result = await tuitionCollection.find(query).toArray();
-  res.send(result);
-});
-
-
-
-
+            const search = req.query.search || "";
+            const query = {
+            $or: [
+                { subject: { $regex: search, $options: "i" } },
+                { location: { $regex: search, $options: "i" } }
+            ]
+            };
+            const result = await tuitionCollection.find(query).toArray();
+            res.send(result);
+        });
 
 
 
