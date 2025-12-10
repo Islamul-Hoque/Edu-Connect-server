@@ -81,26 +81,6 @@ async function run() {
             res.send(result);
         });
 
-        // Apply for a tuition post (Details page)
-        app.post('/apply-tuition', async (req, res) => {
-            const application = req.body;
-            application.appliedAt = new Date();
-            application.status = "Pending";
-
-            // Duplicate application check
-            const existing = await applyTuitionCollection.findOne({
-                tuitionId: application.tuitionId,
-                tutorEmail: application.tutorEmail
-            });
-
-            if (existing) { 
-                return res.send({ success: false, message: "You have already applied for this tuition." });
-            }
-
-            const result = await applyTuitionCollection.insertOne(application);
-            res.send({ success: true, message: "Application submitted successfully!", insertedId: result.insertedId });
-        });
-
 
         // All tuition get api
         // app.get('/all-tuitions', async (req, res) => {
@@ -170,6 +150,39 @@ async function run() {
             try { const result = await tuitionCollection.updateOne(query, update);
                 res.send(result);
             } catch (error) { res.status(500).send({ error: "Failed to update tuition post" });}
+        });
+
+        // Apply for a tuition post
+        app.post('/apply-tuition', async (req, res) => {
+            const application = req.body;
+            application.appliedAt = new Date();
+            application.status = "Pending";
+            application.tuitionId = new ObjectId(application.tuitionId);
+            const existing = await applyTuitionCollection.findOne({ tuitionId: application.tuitionId, tutorEmail: application.tutorEmail });
+
+            if (existing) {
+                return res.send({ success: false, message: "You have already applied for this tuition." });
+            }
+            const result = await applyTuitionCollection.insertOne(application);
+            res.send({ success: true, message: "Application submitted successfully!", insertedId: result.insertedId });
+        });
+
+
+        // Get all applications for a specific tuition post
+        app.get('/applications/student/:email', async (req, res) => {
+            const studentEmail = req.params.email;
+
+            try { const result = await applyTuitionCollection.aggregate([
+                { $lookup: { from: "tuitions", localField: "tuitionId",  foreignField: "_id", as: "tuitionInfo" }},
+                { $unwind: "$tuitionInfo" },
+                { $match: { "tuitionInfo.studentEmail": studentEmail } }
+                ]).toArray();
+
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching applications:", error);
+                res.status(500).send({ error: "Failed to fetch applications" });
+            }
         });
 
 
