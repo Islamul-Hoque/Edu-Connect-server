@@ -117,7 +117,7 @@ async function run() {
                 { location: { $regex: search, $options: "i" } }
             ]
             };
-            const result = await tuitionCollection.find(query).toArray();
+            const result = await tuitionCollection.find(query).sort({createdAt: -1}).toArray();
             res.send(result);
         });
 
@@ -129,7 +129,7 @@ async function run() {
 
         // All tutors get api
         app.get('/all-tutors', async (req, res) => {
-            const result = await userCollection.find({ role: 'Tutor' }).toArray();
+            const result = await userCollection.find({ role: 'Tutor' }).sort({createdAt: -1}).toArray();
             res.send(result);
         });
 
@@ -156,6 +156,22 @@ async function run() {
             const result = await tuitionCollection.deleteOne({ _id: new ObjectId(id) });
             res.send(result);
         });
+
+        // Update tuition post by id
+        app.patch('/tuition/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedTuition = req.body;
+
+            if (updatedTuition._id) { delete updatedTuition._id;}
+
+            const query = { _id: new ObjectId(id) };
+            const update = { $set: updatedTuition };
+
+            try { const result = await tuitionCollection.updateOne(query, update);
+                res.send(result);
+            } catch (error) { res.status(500).send({ error: "Failed to update tuition post" });}
+        });
+
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
