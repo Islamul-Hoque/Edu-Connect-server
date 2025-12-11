@@ -71,7 +71,7 @@ async function run() {
 
         // latest tuition posts for homepage
         app.get('/latest-tuitions', async (req, res) => {
-            const result = await tuitionCollection.find({}).sort({ createdAt: -1 }).limit(4).toArray();
+            const result = await tuitionCollection.find({status: "Approved"}).sort({ createdAt: -1 }).limit(4).toArray();
             res.send(result);
         });
 
@@ -84,23 +84,24 @@ async function run() {
 
 
         // All tuition get api
-        // app.get('/all-tuitions', async (req, res) => {
-        //     const result = await tuitionCollection.find({}).toArray();
-        //     res.send(result);
-        // });
-
-        // Jamela ache
         app.get('/all-tuitions', async (req, res) => {
-            const search = req.query.search || "";
-            const query = {
-            $or: [
-                { subject: { $regex: search, $options: "i" } },
-                { location: { $regex: search, $options: "i" } }
-            ]
-            };
-            const result = await tuitionCollection.find(query).sort({createdAt: -1}).toArray();
+            const result = await tuitionCollection.find({status: "Approved"}).sort({createdAt: -1}).toArray();
             res.send(result);
         });
+
+        // Jamela ache
+        // app.get('/all-tuitions', async (req, res) => {
+        //     const search = req.query.search || "";
+        //     const query = {
+        //         status: "Approved",
+        //     $or: [
+        //         { subject: { $regex: search, $options: "i" } },
+        //         { location: { $regex: search, $options: "i" } }
+        //     ]
+        //     };
+        //     const result = await tuitionCollection.find(query).sort({createdAt: -1}).toArray();
+        //     res.send(result);
+        // });
 
         // latest-tutors get api for homepage
         app.get('/latest-tutors', async (req, res) => {
@@ -214,7 +215,7 @@ async function run() {
         });
 
     // Admin related APIs can be added here...
-        // User Management (Get all users)
+        // User Management Page (Get all users)
         app.get('/users', async (req, res) => {
             const result = await userCollection.find({}).sort({createdAt: -1}).toArray();
             res.send(result);
@@ -234,6 +235,25 @@ async function run() {
                 const result = await userCollection.deleteOne({ _id: new ObjectId(id) });
                 res.send(result);
         });
+
+        // Tuition Management page
+        // Get all pending tuition posts (Admin review)
+        app.get('/tuitions/pending', async (req, res) => {
+            const result = await tuitionCollection.find({ status: "Pending" }).sort({ createdAt: -1 }).toArray();
+            res.send(result);
+        });
+
+        // Update tuition status (Approve / Reject)
+        // app.patch('/tuitions/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const { status } = req.body; // "Approved" or "Rejected"
+        //     const result = await tuitionCollection.updateOne( 
+        //         { _id: new ObjectId(id) }, 
+        //         { $set: { status } }
+        //     );
+        //     res.send(result);
+        // })
+
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
