@@ -64,6 +64,7 @@ async function run() {
             if (!user.role) {
                 user.role = "Student";
             }
+            user.status = "Active"
             const result = await userCollection.insertOne(user);
             res.send(result);
         });
@@ -195,27 +196,44 @@ async function run() {
         });
 
         // Update application (only if not approved)
-app.patch('/applications/:id', async (req, res) => {
-  const id = req.params.id;
-  const updateData = req.body;
-  const result = await applyTuitionCollection.updateOne(
-    { _id: new ObjectId(id), status: { $ne: "Approved" } },
-    { $set: updateData }
-  );
-  res.send(result);
-});
+        app.patch('/applications/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+            const result = await applyTuitionCollection.updateOne(
+                { _id: new ObjectId(id), status: { $ne: "Approved" } },
+                { $set: updateData }
+            );
+            res.send(result);
+        });
 
-// Delete application (only if not approved)
-app.delete('/applications/:id', async (req, res) => {
-  const id = req.params.id;
-  const result = await applyTuitionCollection.deleteOne({
-    _id: new ObjectId(id),
-    status: { $ne: "Approved" }
-  });
-  res.send(result);
-});
+        // Delete application (only if not approved)
+        app.delete('/applications/:id', async (req, res) => {
+            const id = req.params.id;
+            const result = await applyTuitionCollection.deleteOne({ _id: new ObjectId(id), status: { $ne: "Approved" } });
+            res.send(result);
+        });
 
+    // Admin related APIs can be added here...
+        // User Management (Get all users)
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find({}).sort({createdAt: -1}).toArray();
+            res.send(result);
+        });
 
+        // // Update user info (Admin only)
+        // app.patch('/users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const updateData = req.body;
+        //     const result = await userCollection.updateOne( { _id: new ObjectId(id) }, { $set: updateData })
+        //     res.send(result);
+        // });
+
+        // // Delete user account (Admin only)
+        // app.delete('/users/:id', async (req, res) => {
+        //         const id = req.params.id;
+        //         const result = await userCollection.deleteOne({ _id: new ObjectId(id) });
+        //         res.send(result);
+        // });
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
