@@ -220,15 +220,15 @@ async function run() {
             res.send(result);
         });
 
-        // // Update user info (Admin only)
-        // app.patch('/users/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const updateData = req.body;
-        //     const result = await userCollection.updateOne( { _id: new ObjectId(id) }, { $set: updateData })
-        //     res.send(result);
-        // });
+        // Update user info (Admin only)
+        app.patch('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+            const result = await userCollection.updateOne( { _id: new ObjectId(id) }, { $set: updateData })
+            res.send(result);
+        });
 
-        // // Delete user account (Admin only)
+        // Delete user account (Admin only)
         // app.delete('/users/:id', async (req, res) => {
         //         const id = req.params.id;
         //         const result = await userCollection.deleteOne({ _id: new ObjectId(id) });
