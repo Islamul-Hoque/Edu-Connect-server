@@ -206,14 +206,14 @@ app.patch('/applications/:id', async (req, res) => {
 });
 
 // Delete application (only if not approved)
-// app.delete('/applications/:id', async (req, res) => {
-//   const id = req.params.id;
-//   const result = await applyTuitionCollection.deleteOne({
-//     _id: new ObjectId(id),
-//     status: { $ne: "Approved" }
-//   });
-//   res.send(result);
-// });
+app.delete('/applications/:id', async (req, res) => {
+  const id = req.params.id;
+  const result = await applyTuitionCollection.deleteOne({
+    _id: new ObjectId(id),
+    status: { $ne: "Approved" }
+  });
+  res.send(result);
+});
 
 
 
