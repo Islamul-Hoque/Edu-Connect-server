@@ -244,15 +244,15 @@ async function run() {
         });
 
         // Update tuition status (Approve / Reject)
-        // app.patch('/tuitions/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const { status } = req.body; // "Approved" or "Rejected"
-        //     const result = await tuitionCollection.updateOne( 
-        //         { _id: new ObjectId(id) }, 
-        //         { $set: { status } }
-        //     );
-        //     res.send(result);
-        // })
+        app.patch('/tuitions/:id', async (req, res) => {
+            const id = req.params.id;
+            const { status } = req.body; // "Approved" or "Rejected"
+            const result = await tuitionCollection.updateOne( 
+                { _id: new ObjectId(id) }, 
+                { $set: { status } }
+            );
+            res.send(result);
+        })
 
 
         // await client.db("admin").command({ ping: 1 });
