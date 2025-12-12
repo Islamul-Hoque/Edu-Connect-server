@@ -128,9 +128,15 @@ async function run() {
         // get all tuition post by student email
         app.get('/my-tuitions', async (req, res) => {
             const email = req.query.email;
-            const result = await tuitionCollection.find({ studentEmail: email }).sort({createdAt: -1}).toArray();
+            const query = {
+                studentEmail: email,
+                status: "Approved"
+            };
+
+            const result = await tuitionCollection.find(query).sort({ createdAt: -1 }).toArray();
             res.send(result);
         });
+
 
         // delete tuition post by id
         app.delete('/tuition/:id', async (req, res) => {
@@ -177,7 +183,7 @@ async function run() {
             try { const result = await applyTuitionCollection.aggregate([
                 { $lookup: { from: "tuitions", localField: "tuitionId",  foreignField: "_id", as: "tuitionInfo" }},
                 { $unwind: "$tuitionInfo" },
-                { $match: { "tuitionInfo.studentEmail": studentEmail } }
+                { $match: { "tuitionInfo.studentEmail": studentEmail, "tuitionInfo.status": "Approved" } }
                 ]).toArray();
 
                 res.send(result);
@@ -252,6 +258,15 @@ async function run() {
                 { $set: { status } }
             );
             res.send(result);
+        })
+
+        // Dashboard role condition check
+
+        app.get('/users/:email/role', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await userCollection.findOne(query);
+            res.send({ role: user?.role || 'user' })
         })
 
 
