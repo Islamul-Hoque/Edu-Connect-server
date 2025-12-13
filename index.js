@@ -49,6 +49,7 @@ async function run() {
         const userCollection = db.collection('users');
         const tuitionCollection = db.collection('tuitions');
         const applyTuitionCollection = db.collection('appliedTuitions');
+        const paymentCollection = db.collection('payments');
 
         // User APIs
         app.post('/users', async (req, res) => {
@@ -194,7 +195,7 @@ async function run() {
         });
 
 
-        // Tutor related APIs
+    // Tutor related APIs
         // Get all applications by tutor email
         app.get('/my-applications/tutor/:email', async (req, res) => {
             const tutorEmail = req.params.email;
@@ -219,6 +220,19 @@ async function run() {
             const result = await applyTuitionCollection.deleteOne({ _id: new ObjectId(id), status: { $ne: "Approved" } });
             res.send(result);
         });
+
+        // Ongoing tuitions for a tutor
+        app.get('/tuitions/ongoing/:email', async (req, res) => {
+            const tutorEmail = req.params.email;
+            try {
+            const ongoingTuitions = await applyTuitionCollection.find({ tutorEmail: tutorEmail, status: "Approved" }).toArray();
+            res.send(ongoingTuitions);
+            } catch (err) {
+                console.error(err);
+            res.status(500).send({ error: "Failed to fetch ongoing tuitions" });
+            }
+        });
+
 
     // Admin related APIs can be added here...
         // User Management Page (Get all users)
@@ -268,50 +282,91 @@ async function run() {
             res.send({ role: user?.role || 'user' })
         })
 
-
-
-
-// Create Stripe checkout session for tutor application
-app.post('/payment-checkout-session', async (req, res) => {
-  const { applicationId, expectedSalary, tutorEmail, tuitionId, studentEmail } = req.body;
-  const amount = parseInt(expectedSalary) * 100;
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            unit_amount: amount,
-            product_data: {
-              name: `Tutor Application Payment`
+        // Create Stripe checkout session for tutor application
+        app.post('/payment-checkout-session', async (req, res) => {
+            const { applicationId, expectedSalary, tutorEmail, tutorName, subject, tuitionClass, tuitionId, studentEmail} = req.body;
+            const amount = parseInt(expectedSalary) * 100;
+            try {
+                const session = await stripe.checkout.sessions.create({
+                    line_items: [
+                        {
+                            price_data: {
+                                currency: 'usd',
+                                unit_amount: amount,
+                                product_data: {
+                                    name: `Tuition: ${subject} | Class : ${tuitionClass}`,
+                                    description: `Tutor: ${tutorName} | Email: ${tutorEmail} `
+                                }
+                            },
+                            quantity: 1,
+                            },
+                        ],
+                    mode: 'payment',
+                    metadata: { applicationId, tuitionId, tutorEmail },
+                    customer_email: studentEmail,
+                    success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+                    cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+                });
+                res.send({ url: session.url });
+            } catch (error) {
+                    console.error(error);
+                    res.status(500).send({ error: "Failed to create checkout session" });
             }
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      metadata: { applicationId, tuitionId, tutorEmail },
-      customer_email: studentEmail,
-      success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
-    });
+        });
 
-    res.send({ url: session.url });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ error: "Failed to create checkout session" });
+// Verify payment success and approve tutor application
+app.patch('/payment-success', async (req, res) => {
+  const sessionId = req.query.session_id;
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+  if (session.payment_status === 'paid') {
+    const transactionId = session.payment_intent;
+    const uniqueSessionId = session.id;
+
+   
+    const paymentExist = await paymentCollection.findOne({ sessionId: uniqueSessionId });
+    if (paymentExist) {
+      return res.send(paymentExist);
+    }
+
+    
+    const applicationId = session.metadata.applicationId;
+    const tuitionId = session.metadata.tuitionId;
+    const tutorEmail = session.metadata.tutorEmail;
+
+    const application = await applyTuitionCollection.findOne({ _id: new ObjectId(applicationId) });
+    const tuition = await tuitionCollection.findOne({ _id: new ObjectId(tuitionId) });
+
+    const payment = {
+      amount: session.amount_total / 100,
+      currency: session.currency,
+      studentEmail: session.customer_email,
+      tutorEmail,
+      tutorName: application.tutorName,
+      subject: tuition.subject,
+      class: tuition.class,
+      paidAt: new Date(),
+      transactionId,
+      sessionId: uniqueSessionId, 
+      applicationId,
+      tuitionId,
+      paymentStatus: session.payment_status
+    };
+
+    await paymentCollection.insertOne(payment);
+    await applyTuitionCollection.updateOne(
+      { _id: new ObjectId(applicationId) },
+      { $set: { status: "Approved", transactionId } }
+    );
+
+    return res.send(payment);
   }
+
+  res.send({ success: false });
 });
 
 
 
-
-
-
-
-
-        
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
