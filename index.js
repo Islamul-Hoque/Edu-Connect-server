@@ -233,6 +233,12 @@ async function run() {
             }
         });
 
+        // Revenue details for a tutor
+        app.get('/revenue/:tutorEmail', async (req, res) => {
+            const tutorEmail = req.params.tutorEmail;
+            const payments = await paymentCollection.find({ tutorEmail }).toArray();
+            res.send(payments);
+        });
 
     // Admin related APIs can be added here...
         // User Management Page (Get all users)
