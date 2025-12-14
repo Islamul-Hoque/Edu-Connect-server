@@ -259,6 +259,21 @@ async function run() {
             res.send(payments);
         });
 
+        // Tutor stats API
+        app.get('/tutor/stats/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                const totalApplications = await applyTuitionCollection.countDocuments({ tutorEmail: email });
+                const approvedApplications = await applyTuitionCollection.countDocuments({ tutorEmail: email, status: 'Approved' });
+                const pendingApplications = await applyTuitionCollection.countDocuments({ tutorEmail: email, status: 'Pending' });
+                const rejectedApplications = await applyTuitionCollection.countDocuments({ tutorEmail: email, status: 'Rejected' });
+                res.send({ totalApplications, approvedApplications, pendingApplications, rejectedApplications });
+            } catch (err) {
+                console.error(err);
+                res.status(500).send({ error: 'Failed to fetch tutor stats' });
+            }
+        });
+
     // Admin related APIs can be added here...
         // User Management Page (Get all users)
         app.get('/users', async (req, res) => {
@@ -299,7 +314,7 @@ async function run() {
             res.send(result);
         })
 
-        // Dashboard role condition check
+// Dashboard role condition check (Role base conditional rendering)
         app.get('/users/:email/role', async (req, res) => {
             const email = req.params.email;
             const query = { email }
@@ -459,7 +474,6 @@ app.patch('/payment-success', async (req, res) => {
 
 
 
-
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
@@ -469,7 +483,7 @@ app.patch('/payment-success', async (req, res) => {
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-    res.send('eTuitionBd is shifting shifting!')
+    res.send('eTuitionBd server is running!')
 })
 
 app.listen(port, () => {
