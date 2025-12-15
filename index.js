@@ -136,10 +136,6 @@ async function run() {
             res.send({ classes, subjects, locations });
         });
 
-
-
-
-
         // latest-tutors get api (for homepage)
         app.get('/latest-tutors', async (req, res) => {
             const result = await userCollection.find({ role: 'Tutor' }).sort({ createdAt: -1 }).limit(4).toArray();
