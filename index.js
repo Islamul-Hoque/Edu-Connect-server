@@ -84,25 +84,61 @@ async function run() {
             res.send(result);
         });
 
-        // All tuition get api (All tuition page)
+        // all-tuitions API with filtering, sorting, and pagination
         app.get('/all-tuitions', async (req, res) => {
-            const result = await tuitionCollection.find({status: "Approved"}).sort({createdAt: -1}).toArray();
-            res.send(result);
+            const search = req.query.search || "";
+            const sort = req.query.sort || "date-desc";
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 8;
+            const skip = (page - 1) * limit;
+
+            const filterClass = req.query.class || "";
+            const filterSubject = req.query.subject || "";
+            const filterLocation = req.query.location || "";
+
+            const query = {
+                status: "Approved",
+                // dropdown filter
+                $and: [
+                    filterClass ? { class: { $regex: filterClass, $options: "i" } } : {},
+                    filterSubject ? { subject: { $regex: filterSubject, $options: "i" } } : {},
+                    filterLocation ? { location: { $regex: filterLocation, $options: "i" } } : {},
+                    {
+                    // Search Bar
+                    $or: [
+                        { subject: { $regex: search, $options: "i" } },
+                        { location: { $regex: search, $options: "i" } },
+                        { class: { $regex: search, $options: "i" } }
+                    ]
+                    }
+                ]
+            };
+
+            // Sorting options
+            const sortMap = {
+                "budget-asc": { budget: 1 },
+                "budget-desc": { budget: -1 },
+                "date-asc": { createdAt: 1 },
+                "date-desc": { createdAt: -1 }
+            };
+
+            const total = await tuitionCollection.countDocuments(query);
+            const result = await tuitionCollection.find(query).sort(sortMap[sort]).skip(skip).limit(limit).toArray();
+            res.send({ total, page, limit, data: result });
         });
 
-        // Jamela ache
-        // app.get('/all-tuitions', async (req, res) => {
-        //     const search = req.query.search || "";
-        //     const query = {
-        //         status: "Approved",
-        //     $or: [
-        //         { subject: { $regex: search, $options: "i" } },
-        //         { location: { $regex: search, $options: "i" } }
-        //     ]
-        //     };
-        //     const result = await tuitionCollection.find(query).sort({createdAt: -1}).toArray();
-        //     res.send(result);
-        // });
+        // Tuition filters by Subject, Location and Class (All tuition page -Filters)
+        app.get('/tuition-filters', async (req, res) => {
+            const all = await tuitionCollection.find({ status: "Approved" }).toArray();
+            const classes = [...new Set(all.map(t => t.class))];
+            const subjects = [...new Set(all.map(t => t.subject))];
+            const locations = [...new Set(all.map(t => t.location))];
+            res.send({ classes, subjects, locations });
+        });
+
+
+
+
 
         // latest-tutors get api (for homepage)
         app.get('/latest-tutors', async (req, res) => {
@@ -465,8 +501,6 @@ async function run() {
             }
             return res.send({ success: false });
         });
-
-
 
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
