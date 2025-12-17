@@ -16,12 +16,12 @@ app.use(cors());
 const verifyJwtToken = (req, res, next) => {
     const authorization = req.headers.authorization;
     if (!authorization) {
-        return res.status(401).send({ message: 'Unauthorized access' });
+        return res.status(401).send({ message: 'Unauthorized access, kire vai tui ekhane data curi korte aschos naki? ' });
     }
 
     const token = authorization.split(' ')[1];
     if (!token) {
-        return res.status(401).send({ message: 'Unauthorized access' });
+        return res.status(401).send({ message: 'Unauthorized access2' });
     }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
@@ -305,11 +305,30 @@ async function run() {
 
     // Tutor related APIs
         // Get all applications by tutor email (My Applications page)
-        app.get('/my-applications/tutor/:email', async (req, res) => {
-            const tutorEmail = req.params.email;
-            const result = await applyTuitionCollection.find({ tutorEmail: tutorEmail }).sort({appliedAt: -1}).toArray();
-            res.send(result);
+        // app.get('/my-applications/tutor/:email',  async (req, res) => {
+        //     const tutorEmail = req.params.email;
+        //     const result = await applyTuitionCollection.find({ tutorEmail: tutorEmail }).sort({appliedAt: -1}).toArray();
+        //     res.send(result);
+        // });
+
+
+        app.get('/my-applications/tutor/:email', verifyJwtToken, verifyTutor, async (req, res) => {
+            try {
+                const tutorEmail = req.params.email?.toLowerCase().trim(); 
+                const tokenEmail = req.user.email?.toLowerCase().trim();
+                if (tutorEmail !== tokenEmail) { 
+                    return res.status(403).send({ message: 'Forbidden: You can only view your own applications' }); 
+                }
+                const result = await applyTuitionCollection.find({ tutorEmail: tutorEmail }).sort({ appliedAt: -1 }).toArray();
+                res.send(result);
+            } catch (err) {
+                console.error("Error fetching tutor applications:", err);
+            res.status(500).send({ error: 'Failed to fetch applications' });
+            }
         });
+
+
+
 
         // Update application (My Applications page-Update)
         app.patch('/applications/:id', async (req, res) => {
