@@ -223,16 +223,37 @@ async function run() {
         });
 
         // Get all tuition post by student email (My Tuitions page-Get)
-        app.get('/my-tuitions', async (req, res) => {
-            const email = req.query.email;
-            const query = {
-                studentEmail: email,
-                status: "Approved"
-            };
+        // app.get('/my-tuitions', async (req, res) => {
+        //     const email = req.query.email;
+        //     const query = { studentEmail: email, status: "Approved" };
+        //     const result = await tuitionCollection.find(query).sort({ createdAt: -1 }).toArray();
+        //     res.send(result);
+        // });
 
-            const result = await tuitionCollection.find(query).sort({ createdAt: -1 }).toArray();
-            res.send(result);
+        app.get('/my-tuitions', verifyJwtToken, verifyStudent, async (req, res) => {
+            try {
+                const email = req.query.email?.toLowerCase().trim();
+                const tokenEmail = req.user.email?.toLowerCase().trim();
+
+                if (email !== tokenEmail) {
+                    return res.status(403).send({ message: 'Forbidden: You can only view your own tuitions' });
+                }
+
+                const query = { studentEmail: email, status: "Approved" };
+                const result = await tuitionCollection.find(query).sort({ createdAt: -1 }).toArray();
+                res.send(result);
+            } catch (err) {
+                res.status(500).send({ error: "Failed to fetch student tuitions" });
+            }
         });
+
+
+
+
+
+
+
+
 
         // delete tuition post by id (My Tuitions page-Delete)
         app.delete('/tuition/:id', async (req, res) => {
