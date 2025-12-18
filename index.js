@@ -475,27 +475,37 @@ async function run() {
         })
 
         // Reports & Analytics API (Reports & Analytics page)
-        app.get('/admin/reports', async (req, res) => {
+        // app.get('/admin/reports', async (req, res) => {
+        //     try {
+        //         const totalEarningsAgg = await paymentCollection.aggregate([
+        //             { $match: {  paymentStatus: 'paid' } },
+        //             { $group: { _id: null,  total: { $sum: '$amount' } } }
+        //         ]).toArray();
+        //         const totalEarnings = totalEarningsAgg[0]?.total || 0;
+
+        //         const transactions = await paymentCollection.find({ paymentStatus: 'paid' }).sort({ paidAt: -1 }).toArray();
+        //         res.send({ totalEarnings, transactions });
+        //     } catch (err) {
+        //         res.status(500).send({ error: 'Failed to fetch reports' });
+        //     }
+        // });
+
+        app.get('/admin/reports', verifyJwtToken, verifyAdmin, async (req, res) => {
             try {
                 const totalEarningsAgg = await paymentCollection.aggregate([
-                    { $match: { 
-                        paymentStatus: 'paid' 
-                        }
-                    },
-                    { $group: {
-                        _id: null, 
-                        total: { $sum: '$amount' } } 
-                    }
+                { $match: { paymentStatus: 'paid' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
                 ]).toArray();
-                const totalEarnings = totalEarningsAgg[0]?.total || 0;
 
+                const totalEarnings = totalEarningsAgg[0]?.total || 0;
                 const transactions = await paymentCollection.find({ paymentStatus: 'paid' }).sort({ paidAt: -1 }).toArray();
                 res.send({ totalEarnings, transactions });
             } catch (err) {
-                console.error(err);
                 res.status(500).send({ error: 'Failed to fetch reports' });
             }
-            });
+        });
+
+
 
         // Admin dashboard stats (Admin Dashboard Home page)
         // app.get('/admin/stats', async (req, res) => {
