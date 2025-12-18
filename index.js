@@ -368,24 +368,31 @@ async function run() {
                 const result = await applyTuitionCollection.find({ tutorEmail: tutorEmail, status: "Approved" }).toArray();
                 res.send(result);
             } catch (err) {
-                console.error("Error fetching ongoing tuitions:", err);
                 res.status(500).send({ error: "Failed to fetch ongoing tuitions" });
             }
         });
 
-
-
-
-
-
-
-
-
         // Revenue details for a tutor (Revenue History page)
-        app.get('/revenue/:tutorEmail', async (req, res) => {
-            const tutorEmail = req.params.tutorEmail;
-            const payments = await paymentCollection.find({ tutorEmail }).toArray();
-            res.send(payments);
+        // app.get('/revenue/:tutorEmail', async (req, res) => {
+        //     const tutorEmail = req.params.tutorEmail;
+        //     const payments = await paymentCollection.find({ tutorEmail }).toArray();
+        //     res.send(payments);
+        // });
+
+        app.get('/revenue/:tutorEmail', verifyJwtToken, verifyTutor, async (req, res) => {
+            try {
+                const tutorEmail = req.params.tutorEmail?.toLowerCase().trim();
+                const tokenEmail = req.user.email?.toLowerCase().trim();
+
+                if (tutorEmail !== tokenEmail) {
+                    return res.status(403).send({ message: 'Forbidden: You can only view your own revenue history' });
+                }
+
+                const result = await paymentCollection.find({ tutorEmail: tutorEmail }).toArray();
+                res.send(result);
+            } catch (err) {
+                res.status(500).send({ error: "Failed to fetch revenue history" });
+            }
         });
 
         // Tutor stats API(Tutor Dashboard Home page)
