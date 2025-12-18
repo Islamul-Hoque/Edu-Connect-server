@@ -418,9 +418,19 @@ async function run() {
 
     // Admin related APIs...
         // Get all users (User Management Page)
-        app.get('/users', async (req, res) => {
-            const result = await userCollection.find({}).sort({createdAt: -1}).toArray();
-            res.send(result);
+        // app.get('/users', async (req, res) => {
+        //     const result = await userCollection.find({}).sort({createdAt: -1}).toArray();
+        //     res.send(result);
+        // });
+
+        // Get all users (User Management Page)
+        app.get('/users', verifyJwtToken, verifyAdmin, async (req, res) => {
+            try {
+                const result = await userCollection.find({}).sort({createdAt: -1}).toArray();
+                res.send(result);
+            } catch (err) {
+                res.status(500).send({ error: "Failed to fetch users" });
+            }
         });
 
         // Update user info (User Management-Update)
@@ -527,9 +537,6 @@ async function run() {
                 res.status(500).send({ error: "Failed to fetch admin stats" });
             }
         });
-
-
-
 
 
     // Dashboard role (Role base conditional rendering)
