@@ -33,6 +33,23 @@ const verifyJwtToken = (req, res, next) => {
     });
 };
 
+
+// Student verification middleware
+const verifyStudent = (req, res, next) => {
+    if (req.user.role !== 'Student') {
+        return res.status(403).send({ message: 'Forbidden: Students only' });
+    }
+    next();
+};
+
+// Tutor verification middleware
+const verifyTutor = (req, res, next) => {
+    if (req.user.role !== 'Tutor') {
+        return res.status(403).send({ message: 'Forbidden: Tutors only' });
+    }
+    next();
+};
+
 // Admin verification middleware
 const verifyAdmin = (req, res, next) => {
     if (req.user.role !== 'Admin') {
@@ -40,17 +57,6 @@ const verifyAdmin = (req, res, next) => {
     }
     next();
 };
-
-// Tutor verification middleware
-const verifyTutor = (req, res, next) => {
-    // console.log(req.user);
-    
-    if (req.user.role !== 'Tutor') {
-        return res.status(403).send({ message: 'Forbidden: Tutors only' });
-    }
-    next();
-};
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xue6gdd.mongodb.net/?appName=Cluster0`;
 
@@ -289,19 +295,40 @@ async function run() {
         });
 
         // Student stats API (Student Dashboard Home page)
-        app.get('/student/stats/:email', async (req, res) => {
+        // app.get('/student/stats/:email', async (req, res) => {
+        //     try {
+        //         const email = req.params.email;
+        //         const totalPosts = await tuitionCollection.countDocuments({ studentEmail: email });
+        //         const approved = await tuitionCollection.countDocuments({ studentEmail: email, status: 'Approved' });
+        //         const pending = await tuitionCollection.countDocuments({ studentEmail: email, status: 'Pending' });
+        //         const rejected = await tuitionCollection.countDocuments({ studentEmail: email, status: 'Rejected' });
+        //         res.send({ totalPosts, approved, pending, rejected });
+        //     } catch (err) {
+        //         console.error(err);
+        //         res.status(500).send({ error: 'Failed to fetch student stats' });
+        //     }
+        // });
+
+        app.get('/student/stats/:email', verifyJwtToken, verifyStudent, async (req, res) => {
             try {
-                const email = req.params.email;
+                const email = req.params.email?.toLowerCase().trim();
+                const tokenEmail = req.user.email?.toLowerCase().trim();
+
+                if (email !== tokenEmail) {
+                    return res.status(403).send({ message: 'Forbidden: You can only view your own stats' });
+                }
+
                 const totalPosts = await tuitionCollection.countDocuments({ studentEmail: email });
                 const approved = await tuitionCollection.countDocuments({ studentEmail: email, status: 'Approved' });
                 const pending = await tuitionCollection.countDocuments({ studentEmail: email, status: 'Pending' });
                 const rejected = await tuitionCollection.countDocuments({ studentEmail: email, status: 'Rejected' });
+
                 res.send({ totalPosts, approved, pending, rejected });
             } catch (err) {
-                console.error(err);
                 res.status(500).send({ error: 'Failed to fetch student stats' });
             }
         });
+
 
     // Tutor related APIs
         // Get all applications by tutor email (My Applications page)
