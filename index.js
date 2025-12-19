@@ -113,8 +113,6 @@ async function run() {
             }
         });
 
-
-
         // User APIs (Register & Login user info )
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -529,29 +527,51 @@ async function run() {
 
         // Get all pending tuition posts (Tuition Management page-Get)
         // app.get('/tuitions/pending', async (req, res) => {
-        //     const result = await tuitionCollection.find({ status: "Pending" }).sort({ createdAt: -1 }).toArray();
+        //     const result = await tuitionCollection.find({ status: "Pending" }).sort({status: -1, createdAt: -1 }).toArray();
         //     res.send(result);
         // });
 
-        app.get('/tuitions/pending', verifyJwtToken, verifyAdmin, async (req, res) => {
+        app.get('/tuitions', verifyJwtToken, verifyAdmin, async (req, res) => {
             try {
-                const result = await tuitionCollection.find({ status: "Pending" }).sort({ createdAt: -1 }).toArray();
+                const result = await tuitionCollection.find().sort({   createdAt: -1 }).toArray();
                 res.send(result);
             } catch (err) {
-                res.status(500).send({ error: "Failed to fetch pending tuitions" });
+                res.status(500).send({ error: "Failed to fetch tuitions" });
+            }
+            });
+
+
+        // Update tuition status (Tuition Management page-Update)   //  eta real api
+        // app.patch('/tuitions/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const { status } = req.body; 
+        //     const result = await tuitionCollection.updateOne( 
+        //         { _id: new ObjectId(id) }, 
+        //         { $set: { status } }
+        //     );
+        //     res.send(result);
+        // })
+
+
+        app.patch('/tuitions/:id', verifyJwtToken, verifyAdmin, async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { status } = req.body;
+
+                if (!["Pending", "Approved", "Rejected"].includes(status)) {
+                    return res.status(400).send({ error: "Invalid status value" });
+                }
+
+                const result = await tuitionCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { status } }
+                );
+                res.send(result);
+            } catch (err) {
+                res.status(500).send({ error: "Failed to update tuition status" });
             }
         });
 
-        // Update tuition status (Tuition Management page-Update)
-        app.patch('/tuitions/:id', async (req, res) => {
-            const id = req.params.id;
-            const { status } = req.body; 
-            const result = await tuitionCollection.updateOne( 
-                { _id: new ObjectId(id) }, 
-                { $set: { status } }
-            );
-            res.send(result);
-        })
 
         // Reports & Analytics API (Reports & Analytics page)
         // app.get('/admin/reports', async (req, res) => {
