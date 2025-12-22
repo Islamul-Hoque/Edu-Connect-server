@@ -430,20 +430,37 @@ async function run() {
         });
 
         // Update application (My Applications page-Update)
-        app.patch('/applications/:id', async (req, res) => {
+        // app.patch('/applications/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const updateData = req.body;
+        //     const result = await applyTuitionCollection.updateOne(
+        //         { _id: new ObjectId(id), status: { $ne: "Approved" } },
+        //         { $set: updateData }
+        //     );
+        //     res.send(result);
+        // });
+
+        app.patch('/applications/:id', verifyJwtToken, verifyTutor, async (req, res) => {
             const id = req.params.id;
             const updateData = req.body;
+
             const result = await applyTuitionCollection.updateOne(
-                { _id: new ObjectId(id), status: { $ne: "Approved" } },
+                { _id: new ObjectId(id), tutorEmail: req.user.email, status: { $ne: "Approved" } },
                 { $set: updateData }
             );
             res.send(result);
         });
 
         // Delete application (My Applications page-Delete)
-        app.delete('/applications/:id', async (req, res) => {
+        // app.delete('/applications/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const result = await applyTuitionCollection.deleteOne({ _id: new ObjectId(id), status: { $ne: "Approved" } });
+        //     res.send(result);
+        // });
+
+        app.delete('/applications/:id', verifyJwtToken, verifyTutor, async (req, res) => {
             const id = req.params.id;
-            const result = await applyTuitionCollection.deleteOne({ _id: new ObjectId(id), status: { $ne: "Approved" } });
+            const result = await applyTuitionCollection.deleteOne({ _id: new ObjectId(id), tutorEmail: req.user.email,  status: { $ne: "Approved" }});
             res.send(result);
         });
 
@@ -591,7 +608,6 @@ async function run() {
         //     res.send(result);
         // })
 
-
         app.patch('/tuitions/:id', verifyJwtToken, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
@@ -610,7 +626,6 @@ async function run() {
                 res.status(500).send({ error: "Failed to update tuition status" });
             }
         });
-
 
         // Reports & Analytics API (Reports & Analytics page)
         // app.get('/admin/reports', async (req, res) => {
@@ -642,8 +657,6 @@ async function run() {
                 res.status(500).send({ error: 'Failed to fetch reports' });
             }
         });
-
-
 
         // Admin dashboard stats (Admin Dashboard Home page)
         // app.get('/admin/stats', async (req, res) => {
@@ -738,7 +751,6 @@ async function run() {
                 res.status(500).send({ error: "Failed to create checkout session" });
             }
         });
-
 
         // Verify payment success and approve tutor application
         app.patch('/payment-success', async (req, res) => {
