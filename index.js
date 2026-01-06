@@ -268,6 +268,7 @@ async function run() {
             res.send({ success: true, message: "Application submitted successfully!", insertedId: result.insertedId });
         });
 
+// Bug fixed
         // Get all applications for a specific tuition post(Applied Tutors pages)
         app.get('/applications/student/:email', verifyJwtToken, verifyStudent, async (req, res) => {
             try {
@@ -328,6 +329,7 @@ async function run() {
             }
         });
 
+// Bug fixed
     // Tutor related APIs
         // Get all applications by tutor email (My Applications page)
         app.get('/my-applications/tutor/:email', verifyJwtToken, verifyTutor, async (req, res) => {
@@ -356,6 +358,17 @@ async function run() {
             );
             res.send(result);
         });
+
+        // Reject application (Applied Tutors pages tutor application-Rejected by student) // Bug fixed
+        app.patch('/applications/student/:id', verifyJwtToken, verifyStudent, async (req, res) => {
+            const id = req.params.id;
+            const result = await applyTuitionCollection.updateOne(
+                { _id: new ObjectId(id), status: "Pending" },
+                { $set: { status: "Rejected" } }
+            );
+            res.send(result);
+        });
+
 
         // Delete application (My Applications page-Delete)
         app.delete('/applications/:id', verifyJwtToken, verifyTutor, async (req, res) => {
