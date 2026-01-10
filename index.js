@@ -191,6 +191,20 @@ async function run() {
             res.send(result);
         }); 
 
+        // Platform stats API (homepage)
+        app.get('/platform/stats', async (req, res) => {
+            try {
+                const totalUsers = await userCollection.countDocuments();
+                const totalTutors = await userCollection.countDocuments({ role: 'Tutor' });
+                const totalTuitions = await tuitionCollection.countDocuments();
+                const approvedTuitions = await tuitionCollection.countDocuments({ status: 'Approved' });
+                res.send({ totalUsers, totalTutors, totalTuitions, approvedTuitions});
+            } catch (err) {
+                // console.error("Platform stats error:", err);
+                res.status(500).send({ error: "Failed to fetch platform stats" });
+            }
+        });
+
         // All tutors get api (All tutors page)
         app.get('/all-tutors', async (req, res) => {
             const result = await userCollection.find({ role: 'Tutor' }).sort({createdAt: -1}).toArray();
@@ -630,9 +644,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-    res.send('eTuitionBd server is running!')
+    res.send('EduConnect server is running!')
 })
 
 app.listen(port, () => {
-    console.log(`eTuitionBd listening on port ${port}`)
+    console.log(`EduConnect listening on port ${port}`)
 })
