@@ -198,7 +198,9 @@ async function run() {
                 const totalTutors = await userCollection.countDocuments({ role: 'Tutor' });
                 const totalTuitions = await tuitionCollection.countDocuments();
                 const approvedTuitions = await tuitionCollection.countDocuments({ status: 'Approved' });
-                res.send({ totalUsers, totalTutors, totalTuitions, approvedTuitions});
+                const successfulPayments = await paymentCollection.countDocuments({ paymentStatus: 'paid' });
+                res.send({ totalUsers, totalTutors, totalTuitions, approvedTuitions, successfulPayments});
+
             } catch (err) {
                 // console.error("Platform stats error:", err);
                 res.status(500).send({ error: "Failed to fetch platform stats" });
